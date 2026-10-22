@@ -1,0 +1,8 @@
+[
+  { "label": "muted", "js": "localStorage.setItem('claudeGames.muted', '1'); location.reload(); 'reload'", "wait": 3500 },
+  { "label": "boot", "js": "JSON.stringify({ title: document.title, state: game.info().state, kit: typeof Kit, three: typeof THREE })" },
+  { "label": "a move and Foxy's answer", "js": "game.hold(true); game.start({ size: 8, players: 1, who: 'teddy', level: 'normal' }); game.step(0.5); var g = game.G.game; if (g.turn !== 1) for (var k = 0; k < 40 && !(game.info().ready && game.info().turn === 1); k++) game.step(0.25); var m = game.rules.moves(g); game.tap(m[0]); for (var k = 0; k < 40 && !(game.info().ready && game.info().turn === 1); k++) game.step(0.25); var i = game.info(); JSON.stringify({ discs: i.discs, turn: i.turn, ready: i.ready, shownOk: i.shown === i.board })" },
+  { "label": "check", "js": "var c = game.check({ games: 8 }); JSON.stringify({ ok: c.ok, problems: c.problems })" },
+  { "label": "check, sabotaged", "js": "var c = game.check({ games: 8, sabotage: 'nodiag' }); JSON.stringify({ ok: c.ok, problems: c.problems.length })" },
+  { "label": "sabotage switched off again", "js": "JSON.stringify(FLP.sabotage)" }
+]

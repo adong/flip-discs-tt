@@ -842,7 +842,7 @@
   // ---------------------------------------------------------------- the loop
 
   const tmp = new THREE.Vector3();
-  function step(dt) {
+  function step(dt, draw = true) {
     dt = Math.min(dt, 0.1);
     // the window can start at 0 x 0 (a hidden tab) and resize without an event reaching us: re-fit when it changes
     if ((innerWidth || 1) !== ST.W || (innerHeight || 1) !== ST.H) layout();
@@ -923,7 +923,7 @@
     FLP.fx.overlay.update(dt);
     ui.callBtn.classList.toggle('here', FLP.buddy.on || FLP.highFive.on);
     ui.callBtn.classList.toggle('nudge', G.nudge && !FLP.buddy.on && G.state === 'play');
-    ST.render();
+    if (draw) ST.render();
   }
 
   function frame(now) {
@@ -1000,7 +1000,7 @@
     // advance `secs` of game time in 1/60 s steps, rendering once at the end (works while the pane is hidden)
     step(secs = 0.1) {
       const n = Math.max(1, Math.round(secs * 60));
-      for (let i = 0; i < n; i++) step(1 / 60);
+      for (let i = 0; i < n; i++) step(1 / 60, i === n - 1);
       return game.info();
     },
     hold(on = true) { G.held = on; },
