@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#9fdcff">
+<title>TT Flip Discs · Teddy &amp; Tommy</title>
+<!-- The game's icon: the same emoji as its card on the dashboard, on a coloured tile. It's the browser tab's icon (the SVG, then
+     a PNG drawn below) and the iPad home screen's (apple-touch-icon). The device's own emoji font draws it: no image files. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20x='2'%20y='2'%20width='60'%20height='60'%20rx='14'%20fill='%232fb36b'%20stroke='%2314121f'%20stroke-width='4'/%3E%3Ctext%20x='32'%20y='44'%20font-size='36'%20text-anchor='middle'%3E%F0%9F%94%98%3C/text%3E%3C/svg%3E">
+<script>
+  (function (emoji, tile) {
+    function draw(size, framed) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      if (!g) return '';
+      const u = size / 64;
+      g.fillStyle = tile;
+      if (framed) { // the tab: a rounded tile with the dashboard's dark outline
+        g.beginPath();
+        if (g.roundRect) g.roundRect(2 * u, 2 * u, 60 * u, 60 * u, 14 * u); else g.rect(2 * u, 2 * u, 60 * u, 60 * u);
+        g.fill();
+        g.lineWidth = 4 * u;
+        g.strokeStyle = '#14121f';
+        g.stroke();
+      } else g.fillRect(0, 0, size, size); // the home screen: iOS rounds the corners itself
+      g.font = `${Math.round(size * (framed ? 0.56 : 0.62))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      g.textAlign = 'center';
+      const m = g.measureText(emoji);
+      const up = m.actualBoundingBoxAscent || size * 0.4, down = m.actualBoundingBoxDescent || 0;
+      g.fillText(emoji, size / 2, size / 2 + (up - down) / 2);
+      try { return c.toDataURL('image/png'); } catch (e) { return ''; }
+    }
+    const tab = draw(64, true), home = draw(180, false);
+    if (tab) document.querySelector('link[rel="icon"]').href = tab;
+    if (home) {
+      const l = document.createElement('link');
+      l.rel = 'apple-touch-icon';
+      l.href = home;
+      document.head.appendChild(l);
+    }
+  })('🔘', '#2fb36b');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #ffd400;
+    --pink: #ff3d7f;
+    --cyan: #18d4ff;
+    --mint: #3fe0b0;
+    --orange: #ff8a1f;
+    --dark: #1d3a8a;
+    --light: #fff1d2;
+    --felt: #2f9e57;
+    --ink: #14121f;
+    --display: 'Bungee', 'Arial Black', Impact, sans-serif;
+    --pad: max(12px, env(safe-area-inset-left));
+    /* the kit's ? and language buttons (js/keys.js): the middle of the left edge, but on a tall screen in a game the
+       bottom left corner, so the board can use the whole width */
+    --kh-top: calc(50% - 20px);
+    --kl-top: calc(50% + 28px);
+  }
+  @media (max-aspect-ratio: 115/100) {
+    body[data-screen="play"] { --kh-top: calc(100% - 104px - env(safe-area-inset-bottom)); --kl-top: calc(100% - 56px - env(safe-area-inset-bottom)); }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden; background: #9fdcff; color: #fff;
+    font-family: 'Rubik', system-ui, -apple-system, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  #game, #fx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #fx { pointer-events: none; z-index: 8; }
+  .hidden { opacity: 0 !important; pointer-events: none !important; visibility: hidden; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  /* a disc: Teddy's dark side (blue, 🏀), Tommy's light side (cream, ✌️), or Foxy's (🦊) in the other colour; data-e is the emblem */
+  .chip { display: inline-grid; place-items: center; font-style: normal; line-height: 1; width: 1.25em; height: 1.25em; border-radius: 50%; flex-shrink: 0; box-shadow: 0 2px 0 rgba(20,18,31,.45); }
+  .chip::after { content: attr(data-e); font-size: 0.62em; }
+  .chip.d { background: radial-gradient(circle at 35% 30%, #4f72d6, var(--dark) 60%, #0f1f4d); }
+  .chip.l { background: radial-gradient(circle at 35% 30%, #ffffff, var(--light) 60%, #e3cfa2); }
+
+  /* ---------- big chunky buttons ---------- */
+  .bigbtn {
+    min-width: clamp(78px, 13vmin, 112px); height: clamp(78px, 13vmin, 112px); border-radius: 28px; padding: 0 18px;
+    font-size: clamp(40px, 7vmin, 58px); line-height: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(160deg, #ffffff, #e9e3ff); border: 5px solid #fff; box-shadow: 0 7px 0 var(--ink); color: var(--ink);
+    transition: transform 0.08s;
+  }
+  .bigbtn.go { background: linear-gradient(160deg, #8ef56b, #2dbf4e); color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .bigbtn .word { font-family: var(--display); font-size: clamp(22px, 4.4vmin, 36px); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); color: #fff; }
+  .bigbtn:active, .tile:active, .seg button:active, .ibtn:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--ink); }
+  .ibtn {
+    width: clamp(52px, 8vmin, 72px); height: clamp(52px, 8vmin, 72px); border-radius: 20px; font-size: clamp(26px, 4.4vmin, 36px); line-height: 1;
+    display: grid; place-items: center; background: rgba(255, 255, 255, 0.92); border: 4px solid #fff; box-shadow: 0 5px 0 var(--ink);
+  }
+  .ibtn.off { opacity: 0.45; }
+
+  /* ---------- home ---------- */
+  #home { position: fixed; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.8vh, 18px); transition: opacity 0.3s; padding: 12px; }
+  @media (min-aspect-ratio: 115/100) { #home { left: 44vw; right: max(10px, env(safe-area-inset-right)); top: 0; bottom: 0; } }
+  @media (max-aspect-ratio: 115/100) { #home { left: 0; right: 0; bottom: max(8px, env(safe-area-inset-bottom)); height: 64vh; justify-content: flex-start; padding-left: 62px; } }
+  .logo { text-align: center; font-family: var(--display); line-height: 0.92; transform: rotate(-3deg); }
+  .logo small { display: block; font-size: clamp(26px, 5vmin, 44px); color: var(--cyan); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); }
+  .logo big { display: block; font-size: clamp(42px, 9vmin, 88px); color: var(--yellow); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink), 0 12px 24px rgba(0,0,0,.2); letter-spacing: 1px; white-space: nowrap; }
+  .tagline { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-size: clamp(14px, 2.6vmin, 22px); color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); margin-top: -4px; text-align: center; }
+  .tagline .row { display: flex; gap: 2px; font-size: 0.85em; }
+  .tiles { display: flex; gap: clamp(8px, 2vmin, 20px); }
+  .tile {
+    position: relative; width: clamp(98px, 18vmin, 180px); aspect-ratio: 1 / 1.16; border-radius: 28px; border: 5px solid #fff;
+    box-shadow: 0 8px 0 var(--ink); overflow: hidden; transition: transform 0.08s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3%; padding-top: 2%;
+    background: radial-gradient(circle at 50% 35%, #fff3c4, #ffc93c);
+  }
+  .tile[data-n="8"] { background: radial-gradient(circle at 50% 35%, #ffe0ec, #ff7aa8); }
+  .tile:hover { transform: translateY(-3px) rotate(-1deg); }
+  .tile.last { border-color: var(--yellow); }
+  .tile b { font-family: var(--display); font-weight: 400; font-size: clamp(15px, 2.9vmin, 26px); color: #fff; -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); line-height: 1; }
+  .tile b.size { font-size: clamp(13px, 2.3vmin, 20px); color: var(--yellow); }
+  /* the little board on a tile: green squares and a few discs (js/game.js fills it) */
+  .mini { position: relative; width: 58%; aspect-ratio: 1; border-radius: 8px; padding: 5%; background: #c98d45; box-shadow: 0 4px 0 rgba(20,18,31,.35); display: grid; gap: 2px; }
+  .mini i { display: block; background: var(--felt); border-radius: 2px; position: relative; }
+  .mini i:nth-child(odd) { background: #33a65d; }
+  .mini i.d::after, .mini i.l::after { content: ''; position: absolute; inset: 12%; border-radius: 50%; box-shadow: 0 1px 0 rgba(20,18,31,.5); }
+  .mini i.d::after { background: radial-gradient(circle at 35% 30%, #4f72d6, var(--dark) 65%); }
+  .mini i.l::after { background: radial-gradient(circle at 35% 30%, #fff, var(--light) 65%, #e3cfa2); }
+  .opts { display: flex; flex-direction: column; align-items: center; gap: clamp(7px, 1.4vh, 12px); }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .seg button, .tog {
+    display: flex; align-items: center; gap: 8px; height: clamp(50px, 8vmin, 68px); padding: 0 14px 0 10px; border-radius: 22px; border: 4px solid #fff;
+    background: rgba(255, 255, 255, 0.55); box-shadow: 0 5px 0 var(--ink); color: var(--ink); font-family: var(--display); font-size: clamp(14px, 2.6vmin, 22px); transition: transform 0.12s;
+  }
+  .seg button img { height: 80%; aspect-ratio: 1; border-radius: 14px; background: radial-gradient(circle at 50% 35%, #ffffff, #b9e6ff); }
+  .seg button .emo { font-size: 1.3em; }
+  .seg button .chip { font-size: 1.15em; }
+  .seg button.on { background: linear-gradient(160deg, #fffbe0, #ffd84a); border-color: var(--yellow); box-shadow: 0 0 0 4px var(--ink), 0 6px 0 4px var(--ink); transform: scale(1.05); }
+  .tog .box { width: 1.3em; height: 1.3em; border-radius: 8px; background: #fff; border: 3px solid var(--ink); display: grid; place-items: center; font-family: system-ui, sans-serif; font-weight: 800; color: #2dbf4e; line-height: 1; }
+  .tog.on { background: linear-gradient(160deg, #f1ffe8, #a8ef8a); }
+  .tog.on .box::after { content: '✓'; }
+  .tog .dotty { display: grid; grid-template-columns: repeat(2, 0.45em); gap: 0.12em; }
+  .tog .dotty i { width: 0.45em; height: 0.45em; border-radius: 50%; background: var(--felt); box-shadow: inset 0 0 0 0.12em #fff; }
+  .duo { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: clamp(16px, 3vmin, 26px); color: var(--ink); background: rgba(255,255,255,.55); border: 4px solid #fff; border-radius: 22px; padding: 4px 14px 4px 6px; box-shadow: 0 5px 0 var(--ink); }
+  .duo img { width: clamp(44px, 7vmin, 62px); aspect-ratio: 1; border-radius: 14px; background: radial-gradient(circle at 50% 35%, #ffffff, #b9e6ff); }
+  .duo .chip { font-size: 1.15em; }
+  .duo .vs { color: var(--pink); }
+  @media (max-height: 520px) {
+    /* a phone on its side: the menu a size smaller, the options two to a row */
+    #home { gap: 5px; padding: 6px; }
+    .logo small { font-size: 16px; -webkit-text-stroke-width: 2px; }
+    .logo big { font-size: 30px; text-shadow: 0 4px 0 var(--ink); }
+    .tagline { display: none; }
+    .tile { width: 82px; border-width: 4px; border-radius: 20px; box-shadow: 0 5px 0 var(--ink); }
+    .tile b { font-size: 13px; -webkit-text-stroke-width: 2px; }
+    .tile b.size { display: none; }
+    .mini { width: 56%; gap: 1px; }
+    .seg button img { display: none; }
+    .seg button { padding: 0 9px; }
+    .opts { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px 8px; max-width: 100%; }
+    .seg button, .tog { height: 40px; font-size: 12px; border-radius: 14px; padding: 0 8px 0 5px; gap: 5px; border-width: 3px; box-shadow: 0 4px 0 var(--ink); }
+    .seg { gap: 5px; }
+    .duo { font-size: 13px; padding: 2px 8px 2px 4px; }
+    .duo img { width: 34px; }
+  }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 6; transition: opacity 0.3s; }
+  .hudtop { position: absolute; left: var(--pad); right: max(12px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .hudtop .btns { display: flex; gap: 8px; pointer-events: auto; flex-shrink: 0; }
+  .hudtop > button { pointer-events: auto; flex-shrink: 0; }
+  .hudmid { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+  .score { display: flex; align-items: center; gap: clamp(6px, 1.4vmin, 12px); padding: 5px 8px; border-radius: 999px; background: rgba(20, 18, 31, 0.55); border: 3px solid #fff; }
+  .score .side { position: relative; display: flex; align-items: center; gap: clamp(4px, 1vmin, 8px); border-radius: 999px; padding: 2px; transition: box-shadow 0.2s, background 0.2s; }
+  .score .side.now { background: rgba(255, 212, 0, 0.35); box-shadow: 0 0 0 3px var(--yellow); }
+  .score img { width: clamp(38px, 6.5vmin, 56px); height: clamp(38px, 6.5vmin, 56px); border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff3d0, #ffd27a); }
+  .score .chip { font-size: clamp(24px, 4.2vmin, 34px); }
+  .score b { font-family: var(--display); font-weight: 400; font-size: clamp(26px, 5vmin, 42px); line-height: 1; color: var(--yellow); min-width: 2ch; text-align: center; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; font-variant-numeric: tabular-nums; }
+  .score b.bump { animation: bump 0.4s cubic-bezier(.3, 1.8, .5, 1); }
+  .score .dash { color: #fff; font-family: var(--display); font-size: clamp(18px, 3vmin, 26px); }
+  /* games won so far, a little trophy on the face */
+  .score .won { position: absolute; bottom: -9px; font: 400 clamp(11px, 1.9vmin, 15px)/1 var(--display); color: #fff; background: var(--pink); border: 2px solid #fff; border-radius: 999px; padding: 2px 5px; white-space: nowrap; -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill; }
+  #sideL .won { left: -6px; }
+  #sideR .won { right: -6px; }
+  .score .won:empty { display: none; }
+  @keyframes bump { 40% { transform: scale(1.4) rotate(-6deg); } }
+  .turn { font-family: var(--display); font-size: clamp(18px, 3.6vmin, 30px); color: #fff; -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); white-space: nowrap; transition: opacity 0.2s; }
+  .turn.mine { color: var(--yellow); animation: nudge 1.2s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: scale(1.08); } }
+  @media (max-width: 520px) {
+    .score img { width: 34px; height: 34px; }
+    .score .chip { font-size: 22px; }
+    .score b { font-size: 24px; }
+    .turn { font-size: 16px; }
+    .hudtop .btns { flex-direction: column; }
+  }
+  @media (max-height: 520px) and (min-aspect-ratio: 115/100) {
+    /* a phone on its side: the buttons stacked on the left, the score and the turn line in a column on the right
+       (under the sound button), so the board can use the whole height (js/game.js layout reads where they are) */
+    .hudtop .btns { flex-direction: column; }
+    .hudmid { position: fixed; right: max(12px, env(safe-area-inset-right)); top: 66px; flex: none; align-items: flex-end; gap: 6px; }
+    .score { flex-direction: column; border-radius: 24px; gap: 2px; padding: 4px; }
+    .score .dash { font-size: 14px; line-height: 0.8; }
+    .score img { width: 32px; height: 32px; }
+    .score .chip { font-size: 20px; }
+    .score b { font-size: 22px; }
+    .turn { font-size: 14px; white-space: normal; text-align: right; max-width: 130px; line-height: 1.1; }
+    .ibtn { width: 46px; height: 46px; font-size: 22px; border-radius: 14px; }
+  }
+
+  /* your brother's button (1 player) / the high five (2 players): bottom right, big */
+  .callbtn {
+    position: fixed; z-index: 7; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
+    width: clamp(80px, 14vmin, 124px); aspect-ratio: 1; border-radius: 50%; padding: 6px;
+    background: linear-gradient(135deg, #ffb02e, #ff7a1a); border: 5px solid #fff; box-shadow: 0 7px 0 var(--ink);
+    display: grid; place-items: center; font-size: clamp(40px, 7.5vmin, 60px); line-height: 1;
+  }
+  .callbtn img { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff3d0, #ffd27a); }
+  .callbtn kbd { position: absolute; left: -6px; top: -6px; width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--ink); font: 400 18px/30px var(--display); text-align: center; border: 3px solid var(--ink); }
+  @media (hover: none) and (pointer: coarse) { .callbtn kbd { display: none; } }
+  .callbtn:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--ink); }
+  .callbtn.here { animation: glow 1.1s ease-in-out infinite; border-color: var(--yellow); }
+  .callbtn.nudge { animation: wiggle 1.3s ease-in-out infinite; border-color: var(--yellow); }
+  @keyframes glow { 50% { box-shadow: 0 0 30px 8px rgba(255, 212, 0, 0.9), 0 7px 0 var(--ink); } }
+  @keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 10%, 30%, 50% { transform: rotate(-9deg) scale(1.06); } 20%, 40% { transform: rotate(9deg) scale(1.06); } }
+
+  /* ---------- toasts ---------- */
+  #toasts { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; z-index: 9; width: 96vw; }
+  .toast {
+    font-family: var(--display); font-size: clamp(22px, 4.6vmin, 42px); color: var(--yellow); max-width: 94vw; text-align: center;
+    -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); animation: toast 1.9s ease-out forwards;
+  }
+  .toast.save { color: #7df7c8; font-size: clamp(26px, 6vmin, 52px); animation-duration: 2.4s; }
+  .toast.treat { color: #fff; }
+  .toast.buddy { color: #ffb02e; }
+  .toast.hint { color: #fff; font-size: clamp(18px, 3.6vmin, 30px); }
+  .toast.pass { color: #ffb8d6; animation-duration: 2.2s; }
+  @keyframes toast { 0% { transform: scale(0.4); opacity: 0; } 12% { transform: scale(1.12); opacity: 1; } 20% { transform: scale(1); } 80% { opacity: 1; } 100% { transform: translateY(-30px); opacity: 0; } }
+
+  /* ---------- overlays: game over, pause ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(20, 18, 31, 0.35); transition: opacity 0.25s; padding: 14px; }
+  .panel { position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.2vh, 20px); padding: clamp(16px, 3.4vmin, 32px); border-radius: 40px; background: linear-gradient(170deg, #fff8e6, #ffe2b8); border: 6px solid #fff; box-shadow: 0 10px 0 var(--ink); color: var(--ink); max-width: 96vw; max-height: 96vh; }
+  .rface { display: flex; align-items: center; gap: 14px; }
+  .rface img { width: clamp(70px, 14vmin, 120px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff3d0, #ffd27a); border: 4px solid #fff; box-shadow: 0 4px 0 var(--ink); animation: pop 0.5s cubic-bezier(.3, 1.8, .5, 1); }
+  .rface .big { font-size: clamp(56px, 12vmin, 100px); line-height: 1; animation: pop 0.5s cubic-bezier(.3, 1.8, .5, 1); }
+  @keyframes pop { from { transform: scale(0.3); } }
+  .rtitle { font-family: var(--display); font-size: clamp(30px, 6.6vmin, 60px); line-height: 1.05; text-align: center; color: var(--yellow); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); max-width: 88vw; }
+  .rscore { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-size: clamp(30px, 6vmin, 52px); }
+  .rscore img { width: 1.3em; height: 1.3em; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fff3d0, #ffd27a); }
+  .rscore .chip { font-size: 0.8em; }
+  .rscore .dash { color: #b8b2c8; }
+  .rgames { font-family: var(--display); font-size: clamp(16px, 3vmin, 26px); color: #8a7f9c; display: flex; align-items: center; gap: 8px; }
+  .rbtns { display: flex; gap: clamp(14px, 3vmin, 26px); align-items: center; }
+  #pause .panel { flex-direction: row; gap: 24px; }
+  @media (max-height: 430px) { .panel { gap: 8px; padding: 12px 20px; } .rface img { width: 60px; } .rface .big { font-size: 48px; } .bigbtn { height: 64px; min-width: 64px; font-size: 32px; border-radius: 20px; } }
+
+  #loading { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #9fdcff; font-size: 80px; transition: opacity 0.4s; }
+  #loading span { animation: bump 0.8s infinite; display: inline-block; }
+  @media (prefers-reduced-motion: reduce) { .turn.mine, .callbtn.here, .callbtn.nudge { animation: none; } }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<canvas id="fx"></canvas>
+
+<!-- home -->
+<div id="home">
+  <div class="logo" id="logo"><small></small><big></big></div>
+  <div class="tagline"><span class="row"><i class="chip d" data-e="🏀"></i><i class="chip l" data-e="✌️"></i><i class="chip d" data-e="🏀"></i></span><span>TRAP THEM TO FLIP THEM!</span></div>
+  <div class="tiles" id="tiles">
+    <button class="tile" data-n="6" title="6 × 6 (1)" aria-label="Little board, 6 by 6"><span class="mini"></span><b>LITTLE</b><b class="size">6 × 6</b></button>
+    <button class="tile" data-n="8" title="8 × 8 (2)" aria-label="Big board, 8 by 8"><span class="mini"></span><b>BIG</b><b class="size">8 × 8</b></button>
+  </div>
+  <div class="opts">
+    <div class="seg" id="segPlayers" role="radiogroup" aria-label="Players">
+      <button data-v="1"><span class="emo">👤</span>1 PLAYER</button>
+      <button data-v="2"><span class="emo">👥</span>2 PLAYERS</button>
+    </div>
+    <div class="seg" id="segWho" role="radiogroup" aria-label="Who are you?">
+      <button data-v="teddy"><img alt="" draggable="false">TEDDY<i class="chip d" data-e="🏀"></i></button>
+      <button data-v="tommy"><img alt="" draggable="false">TOMMY<i class="chip l" data-e="✌️"></i></button>
+    </div>
+    <div class="seg" id="segLevel" role="radiogroup" aria-label="Level">
+      <button data-v="easy"><span class="emo">🐣</span>EASY<img alt="" draggable="false"></button>
+      <button data-v="normal"><span class="emo">🔥</span>NORMAL<img alt="" draggable="false"></button>
+    </div>
+    <div class="duo" id="duo"><img id="duoA" alt="" draggable="false"><i class="chip d" data-e="🏀"></i><span class="vs">·</span><i class="chip l" data-e="✌️"></i><img id="duoB" alt="" draggable="false"></div>
+    <div class="seg">
+      <button class="tog" id="togUndo" title="Undo button on or off (U)" aria-label="Undo button on or off"><span class="emo">↩️</span>UNDO<b class="box"></b></button>
+      <button class="tog" id="togDots" title="Dots on the squares you can go to (D)" aria-label="Dots on the squares you can go to"><span class="dotty"><i></i><i></i><i></i><i></i></span>DOTS<b class="box"></b></button>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hudtop">
+    <div class="btns">
+      <button class="ibtn" id="pauseBtn" title="Pause (P)" aria-label="Pause">⏸️</button>
+      <button class="ibtn" id="undoBtn" title="Undo (U)" aria-label="Undo">↩️</button>
+    </div>
+    <div class="hudmid">
+      <div class="score">
+        <div class="side" id="sideL"><img id="faceL" alt=""><i class="chip" id="chipL"></i><b id="scoreL">2</b><span class="won" id="wonL"></span></div>
+        <span class="dash">–</span>
+        <div class="side" id="sideR"><b id="scoreR">2</b><i class="chip" id="chipR"></i><img id="faceR" alt=""><span class="won" id="wonR"></span></div>
+      </div>
+      <div class="turn" id="turn"></div>
+    </div>
+    <button class="ibtn" id="muteBtn" title="Sound (M)" aria-label="Sound on or off">🔊</button>
+  </div>
+</div>
+<button class="callbtn hidden" id="callBtn" aria-label="Call your brother"><img id="callFace" alt=""><kbd>T</kbd></button>
+
+<div id="toasts"></div>
+
+<!-- a game is over -->
+<div id="over" class="overlay hidden">
+  <div class="panel">
+    <div class="rface" id="oFace"></div>
+    <div class="rtitle" id="oTitle"></div>
+    <div class="rscore" id="oScore"></div>
+    <div class="rgames" id="oGames"></div>
+    <div class="rbtns">
+      <button class="bigbtn go" id="oAgain" aria-label="Play again"><span class="word">PLAY AGAIN</span></button>
+      <button class="bigbtn" id="oHome" aria-label="Home">🏠</button>
+    </div>
+  </div>
+</div>
+
+<!-- pause -->
+<div id="pause" class="overlay hidden">
+  <div class="panel">
+    <button class="bigbtn go" id="pResume" aria-label="Keep playing">▶</button>
+    <button class="bigbtn" id="pRestart" aria-label="New game">🔄</button>
+    <button class="bigbtn" id="pHome" aria-label="Home">🏠</button>
+  </div>
+</div>
+
+<div id="loading"><span>🔘</span></div>
+
+<script src="kit/three.min.js"></script>
+<script src="kit/gfx.js"></script>
+<script src="kit/people.js"></script>
+<script src="kit/roster.js"></script>
+<script src="kit/portraits.js"></script>
+<script src="kit/sound.js"></script>
+<script src="kit/lang.js"></script>
+<script src="kit/help.js"></script>
+<script src="js/title.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/check.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/actor.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/buddy.js"></script>
+<script src="js/game.js"></script>
+<script src="js/keys.js"></script>
+<script src="js/zh.js"></script>
+</body>
+</html>
