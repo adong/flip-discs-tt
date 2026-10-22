@@ -1,0 +1,4 @@
+[
+  { "label": "prefs", "js": "localStorage.setItem('claudeGames.muted', '1'); localStorage.setItem('flipDiscsTT.v1', JSON.stringify({ size: 8 })); location.reload(); 'reload'", "wait": 3500 },
+  { "label": "title", "js": "game.hold(true); var d = game.G.demo; for (var i = 0; i < 800 && d.st.hist.length < 14 && !d.st.over; i++) game.step(0.25); game.step(1.2); for (var j = 0; j < 40 && game.info().busy; j++) game.step(0.05); 'demo discs ' + d.st.hist.length + (game.info().busy ? ' (busy)' : '')", "wait": 700, "shot": "screenshot" }
+]

@@ -1,0 +1,9 @@
+[
+  { "label": "muted", "js": "localStorage.setItem('claudeGames.muted', '1'); location.reload(); 'reload'", "wait": 3500 },
+  { "size": [390, 844], "label": "phone portrait", "js": "game.hold(true); game.start({ size: 6, players: 1, who: 'tommy', level: 'easy' }); game.step(0.5); game.call(); for (let k = 0; k < 14; k++) game.step(0.25); JSON.stringify(game.info().step)", "wait": 600, "shot": "phone-390" },
+  { "size": [740, 360], "label": "phone on its side", "js": "game.start({ size: 8, players: 1, who: 'teddy', level: 'normal' }); game.step(0.5); for (let k = 0; k < 20 && !(game.info().ready && game.info().turn === 1); k++) game.step(0.25); game.call(); for (let k = 0; k < 14; k++) game.step(0.25); JSON.stringify(game.info().step)", "wait": 600, "shot": "phone-740" },
+  { "size": [1024, 768], "label": "iPad landscape", "js": "game.step(0.3); JSON.stringify(game.info().step)", "wait": 600, "shot": "ipad-1024" },
+  { "size": [768, 1024], "label": "iPad portrait", "js": "game.step(0.3); JSON.stringify(game.info().step)", "wait": 600, "shot": "ipad-768" },
+  { "size": [390, 844], "label": "phone home", "js": "game.home(); game.step(0.5); 'home'", "wait": 600, "shot": "phone-home" },
+  { "size": [740, 360], "label": "phone side home", "js": "game.step(0.3); 'home'", "wait": 600, "shot": "phone-side-home" }
+]

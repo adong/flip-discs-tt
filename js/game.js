@@ -197,6 +197,7 @@
     }
     ST.fit(pts, 1.2, m);
     spots.trays.forEach((t, k) => ST.tray(k, t.x, t.z));
+    if (FLP.buddy.on) FLP.buddy.actor.place(spots.buddy.x, 0, spots.buddy.z); // the screen turned while he's here
     G.sides && G.sides.forEach((s, k) => {
       const sp = spots.sides[k];
       s.actor.faceDefault = sp.face;

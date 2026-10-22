@@ -32,7 +32,7 @@
 
   let renderer = null, W = 1, H = 1, n = 8, pitch = SPAN / 8;
   const scene = new T.Scene();
-  const cam = new T.PerspectiveCamera(36, 1, 0.1, 300);
+  const cam = new T.PerspectiveCamera(24, 1, 0.1, 400); // a long lens: the board stays square when the picture is slid aside for the menu
   const fx = { hint: -1, hintC: 1, hintT: 0, cursor: -1, cursorC: 1, hover: -1, hoverC: 1, last: -1, t: 0, win: 0, winT: 0 };
   const camBase = new T.Vector3();
   const discs = new Map(); // square -> { g, flip, color, anim, flipAnim, peek }
@@ -489,10 +489,9 @@
       d.flip.quaternion.multiplyQuaternions(tmpQ, d.flipAnim.q0);
     }
     const a = cellPos(from), b = cellPos(i);
-    // the axis lies flat, across the line from the new disc, so it tips over away from it
-    axis.set(b.z - a.z, 0, -(b.x - a.x));
-    if (axis.lengthSq() < 1e-6) axis.set(1, 0, 0);
-    axis.normalize();
+    // it tips over front to back (about the board's x axis), away from the new disc: any other way round would leave
+    // its emoji turned on its side after the flip
+    axis.set(Math.sign(b.z - a.z || b.x - a.x || 1), 0, 0);
     d.color = color;
     d.flipAnim = { t: -wait, dur: FLIP.dur, axis: axis.clone(), q0: d.flip.quaternion.clone(), started: false, quiet };
   }
@@ -727,7 +726,7 @@
       return { x0, x1, y0, y1 };
     };
     for (let iter = 0; iter < 4; iter++) {
-      let lo = 2, hi = 300;
+      let lo = 2, hi = 400;
       for (let i = 0; i < 32; i++) {
         const mid = (lo + hi) / 2;
         place(mid);
